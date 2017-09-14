@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+err=0
+trap 'err=1' ERR
+
+builddep=()
+
+if ! which sml &> /dev/null; then
+	dnf copr enable -y jsouthworth/SML-NJ
+	builddep+=(smlnj)
+fi
+
+test -e /usr/include/gtk-2.0            || builddep+=(gtk2-devel)
+test -e /usr/include/libgnomecanvas-2.0 || builddep+=(libgnomecanvas-devel)
+test -e /usr/include/libxml2            || builddep+=(libxml2-devel)
+test -e /usr/include/sqlite3.h          || builddep+=(sqlite-devel)
+test -e /usr/share/libtool/libltdl      || builddep+=(libtool-ltdl-devel)
+
+test ${#builddep} -gt 0 && dnf install -y "${builddep[@]}"
+
+dir=/opt/aliceml
+rm -rf $dir
+mkdir -p $dir/include
+cd $dir
+ln -fst include /usr/include/{cairo,gdk-pixbuf-2.0,glib-2.0,gtk-2.0,libgnomecanvas-2.0,libxml2,pango-1.0}/* /usr/lib64/include/{glib-2.0,gtk-2.0}/*
+git clone --depth 1 --recursive https://github.com/aliceml/aliceml.git build
+cd build/make
+
+PATH="$dir/build/seam-support/install/bin:$PATH" make setup all PREFIX="$dir"
+
+cd "$dir"
+rm -rf build
+find include/ -type l -delete
+dnf remove -y "${builddep[@]}"
+test "${builddep[0]}" = smlnj && dnf copr disable jsouthworth/SML-NJ
+
+exit "$err"
