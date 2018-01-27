@@ -1,0 +1,18 @@
+#!/bin/bash
+
+err=0
+trap 'err=1' ERR
+
+build=$(mktemp -d libstdbuf.so.XXXXXXXX)
+git clone --depth=1 --recursive https://github.com/coreutils/coreutils $build
+cd $build
+./bootstrap --gnulib-srcdir=gnulib --no-git --skip-po
+./configure --build=x86_64 --host=x86
+make
+rm src/src_libstdbuf_so-libstdbuf.o src/libstdbuf.so
+make src/libstdbuf.so CFLAGS=-m32
+mv -f src/libstdbuf.so ..
+cd ..
+rm -r $build
+
+exit "$err"
