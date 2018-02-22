@@ -1,0 +1,19 @@
+#!/bin/bash
+
+err=0
+trap 'err=1' ERR
+
+rm -rf llvm-3.5.2
+mkdir -p llvm-3.5.2/build
+cd llvm-3.5.2/build
+curl --location --silent --show-error http://releases.llvm.org/3.5.2/llvm-3.5.2.src.tar.xz \
+        | tar x --xz --strip-components=1
+
+export CC=clang CCX=clang++
+./configure --prefix=/opt/llvm-3.5.2 --enable-optimized --enable-targets=host-only
+make
+make install
+cd ..
+rm -r build
+
+exit "$err"
