@@ -1,0 +1,32 @@
+#!/bin/bash
+
+err=0
+trap 'err=1' ERR
+
+which ccache &> /dev/null || dnf install -y ccache
+
+rm -rf checked-c
+mkdir checked-c
+
+cd checked-c
+git clone https://github.com/Microsoft/checkedc-llvm --depth 1 llvm
+
+pushd llvm/tools
+git clone https://github.com/Microsoft/checkedc-clang --depth 1 clang
+
+popd
+pushd llvm/projects/checkedc-wrapper
+git clone --depth 1 https://github.com/Microsoft/checkedc
+
+popd
+mkdir llvm.obj
+pushd llvm.obj
+
+LLVM_CCACHE_BUILD=On cmake ../llvm -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON
+make package
+
+popd
+tar xzf llvm.obj/LLVM-*-Linux.tar.gz
+rm -rf llvm llvm.obj
+
+exit "$err"
