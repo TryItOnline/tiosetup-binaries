@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+err=0
+trap 'err=1' ERR
+
+dir=/opt/perl6-niecza
+rm -rf $dir
+git clone https://github.com/sorear/niecza $dir
+cd $dir
+curl --silent --show-error https://download.mono-project.com/sources/mono/mono-5.20.1.34.tar.bz2 \
+	| tar x --bzip2
+cd mono-*
+./configure --prefix=$dir/mono
+make
+make install
+cd ..
+rm -r mono-*
+ln -s mcs mono/bin/gmcs
+find mono -exec strip -s {} +
+PATH="$dir/mono/bin:$PATH" make
+
+exit "$err"
